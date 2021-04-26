@@ -30,6 +30,6 @@ pip install numpy
 + Plot function
 + Tabulated values for input parameters (e.g. **D** or **mi**)
 + Failure mohr circle plot and σ_1max value.
-+ More (?)
++ More to come (maybe)!
 
 
