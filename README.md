@@ -10,16 +10,16 @@ et al. 2002). The main problem is that it is discontinued and the only version i
 The available functions are:
 
 + Calculate Hoek-Brown criterion parameters
-+ Calculate Rock mass parameters ($\sigma_{t}$, $\sigma_{c}$, $\sigma_{cm}$, $E_{rm}$)
-+ Calculate $\sigma_{3max}$ based on different applications (e.g tunnels)
-+ Calculate Mohr-Coulomb parameters (c and $\phi$)
++ Calculate Rock mass parameters (σ_t, σ_c, σ_cm, E_rm)
++ Calculate σ_3max based on different applications (e.g tunnels)
++ Calculate Mohr-Coulomb parameters (c and φ)
 
 
 ## Dipendencies:
 
 + Numpy:
 
-```
+```python
 pip install numpy
 ```
 
@@ -29,7 +29,7 @@ pip install numpy
 + GUI
 + Plot function
 + Tabulated values for input parameters (e.g. **D** or **mi**)
-+ Failure mohr circle plot and $\sigma_{1max}$ value.
++ Failure mohr circle plot and σ_1max value.
 + More (?)
 
 
