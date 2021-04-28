@@ -37,7 +37,8 @@ def main_var(dict_values):
 	dict_ind['mb'] = mi*np.exp((GSI-100)/(28-(14*D)))
 	dict_ind['s'] = np.exp((GSI-100)/(9-(3*D)))
 	dict_ind['a'] = 0.5+((1/6)*(np.exp(-GSI/15)-np.exp(-20/3)))
-	dict_ind['E_i'] = MR*s_ci
+	dict_ind['E_i'] = dict_values['E_i']
+	
 	#return dict_ind.values()
 	
 
@@ -49,21 +50,50 @@ def hoek_crit():
 def mohr_crit():
 	_,_,_,s_3max = r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_ind['E_i'],case,H,gamma)
 	phi,c = r_m.mohr(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],s_3max)
-	print(np.rad2deg(phi), c)
+	c_val['text'] = str(round(c,3))
+	phi_val['text'] = str(round(np.rad2deg(phi)))
+	
+	#print(np.rad2deg(phi), c)
 
 def register_value(key,value):
 	dict_values[key]=float(value.get())
-	main_var(dict_values)
+	
 	#mb,s,a,Ei = main_var(dict_values)
-	E_i.configure(state='normal')
-	E_i.delete(0,'end')
-	E_i.insert(0,dict_ind['E_i'])
-	E_i.configure(state='disabled')
+	if not ei_var.get():
+		dict_values['E_i'] = dict_values['MR']*dict_values['s_ci']
+		E_i.configure(state='normal')
+		E_i.delete(0,'end')
+		E_i.insert(0,dict_values['E_i'])
+		E_i.configure(state='disabled')
+	else:
+		dict_values['MR'] = dict_values['E_i']/dict_values['s_ci']
+		MR.configure(state='normal')
+		MR.delete(0,'end')
+		MR.insert(0,dict_values['MR'])
+		MR.configure(state='disabled')
+		
+	main_var(dict_values)
+	mohr_crit()
+	mb['text'] = str(round(dict_ind['mb'],3))
+	s['text'] = str(round(dict_ind['s'],3))
+	a['text'] = str(round(dict_ind['a'],3))
 	print(dict_ind)
 
-def calc_ei(key,value):
-	dict_values[key]=float(value.get())
-	mb,s,a,Ei = main_var(dict_ind)
+def toggle_ei():
+	MR["state"] = "disabled"
+	MR_button.toggle()
+	E_i["state"] = "normal"
+	if not ei_var.get():
+		MR["state"] = "normal"
+		E_i["state"] = "disabled"
+def toggle_mr():
+	MR["state"] = "normal"
+	E_i_button.toggle()
+	E_i["state"] = "disabled"
+	if not mr_var.get():
+		E_i["state"] = "normal"
+		MR["state"] = "disabled"
+	
 
 
 dict_values = {'s_ci': 30, 'mi': 10 , 'GSI': 50, 'D': 0, 'E_i': 12000,'MR': 400}
@@ -96,7 +126,7 @@ if __name__ == "__main__":
 	menu = [["File",file_dict],["Tools",tools_dict]]
 
 	window = tk.Tk()
-	window.geometry("400x500")
+	window.geometry("500x500")
 
 	menubar = tk.Menu(window)
 	
@@ -119,7 +149,8 @@ if __name__ == "__main__":
 	
 	tools_frame.rowconfigure(0,minsize=50,weight=1)
 	tools_frame.columnconfigure([0,1,2,3,4,5],minsize=50,weight=1)
-	
+	input_label = tk.Label(tools_frame,text = 'Input variables')
+	input_label.grid(row=0,column=1)
 	s_ci_label = tk.Label(tools_frame,text='s_ci')
 	s_ci = tk.Entry(master=tools_frame)
 	s_ci_label.grid(row=1,column=0)
@@ -148,6 +179,8 @@ if __name__ == "__main__":
 	D.bind('<KeyRelease>',lambda event: register_value('D',D))
 	D.insert(0,dict_values['D'])
 	
+	
+	ei_var = tk.BooleanVar()	
 	E_i_label = tk.Label(tools_frame,text='E_i')
 	E_i = tk.Entry(master=tools_frame)
 	E_i_label.grid(row=5,column=0)
@@ -155,13 +188,55 @@ if __name__ == "__main__":
 	E_i.bind('<KeyRelease>',lambda event: register_value('E_i',E_i))
 	E_i.insert(0,dict_values['E_i'])
 	E_i.config(state='disabled')
+	E_i_button = tk.Checkbutton(tools_frame,var=ei_var,command=toggle_ei)
+	E_i_button.grid(row=5,column=2)
 	
+	mr_var = tk.BooleanVar()
 	MR_label = tk.Label(tools_frame,text='MR')
 	MR = tk.Entry(master=tools_frame)
 	MR_label.grid(row=6,column=0)
 	MR.grid(row=6,column=1)
 	MR.bind('<KeyRelease>',lambda event: register_value('MR',MR))
 	MR.insert(0,dict_values['MR'])
+	MR_button = tk.Checkbutton(tools_frame,var=mr_var,command=toggle_mr)
+	MR_button.toggle()
+	MR_button.grid(row=6,column=2)	
+	
+	hb_label = tk.Label(tools_frame,text = 'Hoek-Brown\ncriterion')
+	hb_label.grid(row=0,column=4)
+	
+	mb_label = tk.Label(tools_frame,text = 'mb:')
+	mb_label.grid(row=1,column=3)
+	mb = tk.Label(tools_frame,text=str(round(dict_ind['mb'],3)))
+	mb.grid(row=1,column=4)
+
+	
+	s_label = tk.Label(tools_frame,text = 's:')
+	s_label.grid(row=2,column=3)
+	s = tk.Label(tools_frame,text=str(round(dict_ind['s'],3)))
+	s.grid(row=2,column=4)
+
+	
+	a_label = tk.Label(tools_frame,text = 'a:')
+	a_label.grid(row=3,column=3)
+	a = tk.Label(tools_frame,text=str(round(dict_ind['a'],3)))
+	a.grid(row=3,column=4)
+	
+	mc_label = tk.Label(tools_frame,text = 'Mohr-Coulomb fit')
+	mc_label.grid(row=4,column=4)
+	
+	c_label = tk.Label(tools_frame,text = 'c:')
+	c_label.grid(row=5,column=3)
+	c_val = tk.Label(tools_frame)
+	c_val.grid(row=5,column=4)
+	phi_label = tk.Label(tools_frame,text = 'phi:')
+	phi_label.grid(row=6,column=3)
+	phi_val = tk.Label(tools_frame)
+	phi_val.grid(row=6,column=4)
+	mohr_crit()
+	
+	
+		
 	
 	
 	
