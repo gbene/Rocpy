@@ -33,30 +33,37 @@ def tool_mohr():
 
 
 def main_var(dict_values):
-	s_ci,mi,GSI,D,E_i,MR = dict_values.values()
+	s_ci,mi,GSI,D,E_i,MR,_,_,_,_= dict_values.values()
 	dict_ind['mb'] = mi*np.exp((GSI-100)/(28-(14*D)))
 	dict_ind['s'] = np.exp((GSI-100)/(9-(3*D)))
 	dict_ind['a'] = 0.5+((1/6)*(np.exp(-GSI/15)-np.exp(-20/3)))
 	dict_ind['E_i'] = dict_values['E_i']
+
 	
 	#return dict_ind.values()
 	
 
 def hoek_crit():
-	s_t,s_u,s_cm,s_3max = r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_ind['E_i'],case,H,gamma)
+	s_t,s_u,s_cm,_ = r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_ind['E_i'],dict_values['case'],dict_values['H'],dict_values['gamma'],dict_values['s_3max'])
 	E_rm = dict_ind['E_i']*(0.02+((1-(dict_values['D']/2))/(1+np.exp((60+(15*dict_values['D'])-dict_values['GSI'])/11))))
-	print(s_t,s_u,s_cm,E_rm,s_3max)
+	
+	s_t_val['text'] = str(round(s_t,3))
+	s_c_val['text'] = str(round(s_u,3))
+	s_cm_val['text'] = str(round(s_cm,3))
+	e_rm_val['text'] = str(round(E_rm,3))
+	#print(s_t,s_u,s_cm,E_rm,s_3max)
 
 def mohr_crit():
-	_,_,_,s_3max = r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_ind['E_i'],case,H,gamma)
-	phi,c = r_m.mohr(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],s_3max)
+	_,_,_,dict_values['s_3max']= r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_ind['E_i'],dict_values['case'],dict_values['H'],dict_values['gamma'],dict_values['s_3max'])
+	phi,c = r_m.mohr(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_values['s_3max'])
 	c_val['text'] = str(round(c,3))
-	phi_val['text'] = str(round(np.rad2deg(phi)))
+	phi_val['text'] = str(round(np.rad2deg(phi),3))
 	
 	#print(np.rad2deg(phi), c)
 
 def register_value(key,value):
 	dict_values[key]=float(value.get())
+	
 	
 	#mb,s,a,Ei = main_var(dict_values)
 	if not ei_var.get():
@@ -73,11 +80,21 @@ def register_value(key,value):
 		MR.configure(state='disabled')
 		
 	main_var(dict_values)
+	
+	hoek_crit()
 	mohr_crit()
+	
+	if dict_values['case'] != 'custom':
+		s3max.configure(state='normal')
+		s3max.delete(0,'end')
+		s3max.insert(0,round(dict_values['s_3max'],3))
+		s3max.configure(state='disabled')
+		
 	mb['text'] = str(round(dict_ind['mb'],3))
 	s['text'] = str(round(dict_ind['s'],3))
 	a['text'] = str(round(dict_ind['a'],3))
-	print(dict_ind)
+
+	
 
 def toggle_ei():
 	MR["state"] = "disabled"
@@ -94,14 +111,37 @@ def toggle_mr():
 		E_i["state"] = "normal"
 		MR["state"] = "disabled"
 	
+def switch_case(event):
+	dict_values['case'] = case_box.get()
+	if dict_values['case'] == 'general':
+		mohr_crit()
+		s3max.configure(state='normal')
+		s3max.delete(0,'end')
+		s3max.insert(0,dict_values['s_3max'])
+		s3max.configure(state='disabled')
+		gamma.configure(state='disabled')
+		H.configure(state='disabled')
+				
+	elif dict_values['case'] == 'tunnel' or dict_values['case'] == 'slope':
+		mohr_crit()
+		gamma.configure(state='normal')
+		H.configure(state='normal')
+		s3max.configure(state='normal')
+		s3max.delete(0,'end')
+		s3max.insert(0,str(round(dict_values['s_3max'],3)))
+		s3max.configure(state='disabled')
+	elif dict_values['case'] == 'custom':
+		s3max.configure(state='normal')
+		gamma.configure(state='disabled')
+		H.configure(state='disabled')
+	
+def plot_hoek():
+	#hoek_crit.fig_hoek.show()
+	print('Plot!')
 
-
-dict_values = {'s_ci': 30, 'mi': 10 , 'GSI': 50, 'D': 0, 'E_i': 12000,'MR': 400}
+dict_values = {'s_ci': 30, 'mi': 10 , 'GSI': 50, 'D': 0, 'E_i': 12000,'MR': 400,'case': 'general','H':50,'gamma':0.026,'s_3max':7.5}
 dict_ind = dict()
 
-H = 50
-gamma = 0.026
-case = 'tunnel'
 
 main_var(dict_values)
 
@@ -118,12 +158,12 @@ if __name__ == "__main__":
 	}
 
 	tools_dict = {
-	"Hoek criterion": hoek_crit,
+	"Hoek criterion": plot_hoek,
 	"Mohr criterion": mohr_crit,
 	"Mohr circle": tool_mohr,
 	}
 
-	menu = [["File",file_dict],["Tools",tools_dict]]
+	menu = [["File",file_dict],["Plots",tools_dict]]
 
 	window = tk.Tk()
 	window.geometry("500x500")
@@ -149,7 +189,7 @@ if __name__ == "__main__":
 	
 	tools_frame.rowconfigure(0,minsize=50,weight=1)
 	tools_frame.columnconfigure([0,1,2,3,4,5],minsize=50,weight=1)
-	input_label = tk.Label(tools_frame,text = 'Input variables')
+	input_label = tk.Label(tools_frame,text = 'H-B classification')
 	input_label.grid(row=0,column=1)
 	s_ci_label = tk.Label(tools_frame,text='s_ci')
 	s_ci = tk.Entry(master=tools_frame)
@@ -202,7 +242,45 @@ if __name__ == "__main__":
 	MR_button.toggle()
 	MR_button.grid(row=6,column=2)	
 	
-	hb_label = tk.Label(tools_frame,text = 'Hoek-Brown\ncriterion')
+	failure_label = tk.Label(tools_frame,text = 'Failure envelope')
+	failure_label.grid(row=7,column=1)
+	
+	case_label = tk.Label(tools_frame,text = 'Application')
+	case_label.grid(row=8,column=0)
+	case_box = ttk.Combobox(tools_frame,values=['general','tunnel','slope','custom'])
+	case_box.bind('<<ComboboxSelected>>',switch_case)
+	case_box.grid(row=8,column=1)
+	case_box.set('general')
+	
+	gamma_label = tk.Label(tools_frame,text='Gamma')
+	gamma_label.grid(row=9,column=0)
+	gamma = tk.Entry(tools_frame)
+	gamma.grid(row=9,column=1)
+	
+	gamma.bind('<KeyRelease>',lambda event: register_value('gamma',gamma))
+	gamma.insert(0,dict_values['gamma'])
+	gamma["state"]='disabled'
+	H_label = tk.Label(tools_frame,text='H')
+	H_label.grid(row=10,column=0)
+	H = tk.Entry(tools_frame)
+	H.grid(row=10,column=1)
+	
+	H.bind('<KeyRelease>',lambda event: register_value('H',H))
+	H.insert(0,dict_values['H'])
+	H["state"]='disabled'
+	
+	
+	
+	s3_label = tk.Label(tools_frame,text = 'sigma_3max')
+	s3_label.grid(row=11,column=0)	
+	s3max = tk.Entry(tools_frame)
+	s3max.grid(row=11,column=1)
+	s3max.bind('<KeyRelease>',lambda event: register_value('s_3max',s3max))
+	
+	s3max.insert(0,dict_values['s_3max'])
+	s3max["state"]='disabled'
+	
+	hb_label = tk.Label(tools_frame,text = 'H-B criterion')
 	hb_label.grid(row=0,column=4)
 	
 	mb_label = tk.Label(tools_frame,text = 'mb:')
@@ -222,7 +300,7 @@ if __name__ == "__main__":
 	a = tk.Label(tools_frame,text=str(round(dict_ind['a'],3)))
 	a.grid(row=3,column=4)
 	
-	mc_label = tk.Label(tools_frame,text = 'Mohr-Coulomb fit')
+	mc_label = tk.Label(tools_frame,text = 'M-C fit')
 	mc_label.grid(row=4,column=4)
 	
 	c_label = tk.Label(tools_frame,text = 'c:')
@@ -233,6 +311,28 @@ if __name__ == "__main__":
 	phi_label.grid(row=6,column=3)
 	phi_val = tk.Label(tools_frame)
 	phi_val.grid(row=6,column=4)
+	
+	rmp_label = tk.Label(tools_frame,text = 'Rock mass paramaters')
+	rmp_label.grid(row=7,column=4)
+	
+	s_t_label = tk.Label(tools_frame,text = 'sigma_t:')
+	s_t_label.grid(row=8,column=3)
+	s_t_val = tk.Label(tools_frame)
+	s_t_val.grid(row=8,column=4)
+	s_c_label = tk.Label(tools_frame,text = 'sigma_c:')
+	s_c_label.grid(row=9,column=3)
+	s_c_val = tk.Label(tools_frame)
+	s_c_val.grid(row=9,column=4)
+	s_cm_label = tk.Label(tools_frame,text = 'sigma_cm:')
+	s_cm_label.grid(row=10,column=3)
+	s_cm_val = tk.Label(tools_frame)
+	s_cm_val.grid(row=10,column=4)
+	e_rm_label = tk.Label(tools_frame,text = 'E_rm:')
+	e_rm_label.grid(row=11,column=3)
+	e_rm_val = tk.Label(tools_frame)
+	e_rm_val.grid(row=11,column=4)
+	
+	hoek_crit()
 	mohr_crit()
 	
 	
