@@ -48,24 +48,33 @@ import matplotlib.pyplot as plt
 
 def hoek(s_ci,mb,s,a,Ei,case,H,gamma,s3):
 	
-	#fig_hoek, ax_hoek = plt.subplots(1,num='H-B criterion')
+	
 	
 
-		
+	
 	s_u = s_ci*np.power(s,a) #rock mass uniaxial compressive strength
 	s_t = (-s*s_ci)/mb #rock mass tensile strength (s_1 = s_3)
 	s_cm = s_ci*((mb+(4*s)-(a*(mb-(8*s))))*np.power(((mb/4)+s),(a-1)))/(2*(1+a)*(2+a)) #mass strength
-	s_3 = np.arange(s_t,1,0.01)
-	print(s_3)
-	s_1 = s_3+(s_ci*np.power(((mb*s_3)/s_ci)+s,a))
+	hoek.s_3 = np.arange(s_t,5,0.01,dtype=np.complex)
+	hoek.s_1 = hoek.s_3+(s_ci*np.power(((mb*hoek.s_3)/s_ci)+s,a))
+	hoek.s_1[0] = 0
 	
-	print(f's_1: {s_1}')
-	#ax_hoek.plot(s_3,s_1,'-k')
+	if plt.fignum_exists('H-B criterion'):
+		
+		hoek_plot.ax_hoek.clear()
+		hoek_plot.ax_hoek.plot(np.real(hoek.s_3),np.real(hoek.s_1),'-k');
+		hoek_plot.ax_hoek.grid();
+		hoek_plot.ax_hoek.set_xlabel(r'$\sigma_{3}$[MPa]');
+		hoek_plot.ax_hoek.set_ylabel(r'$\sigma_{1}$[MPa]');
+		hoek_plot.ax_hoek.set_title('Hoek Brown criterion');
+		hoek_plot.fig_hoek.show();
 
-	ratio = 1+(a*mb*((mb*s_3)/(s_ci)+s)**(a-1))
+	
+	
+	ratio = np.nan_to_num(1+(a*mb*(np.power(((mb*hoek.s_3)/(s_ci))+s,a-1)))) #this means that the input values are absurd (the invalid calculated data will be set to 0 to continue)
 
-	s_n = (s_1+s_3)/2-(((s_1-s_3)/2)*(ratio-1)/(ratio+1))
-	tau = (s_1-s_3)*(np.sqrt(ratio)/(ratio+1))
+	s_n = (hoek.s_1+hoek.s_3)/2-(((hoek.s_1-hoek.s_3)/2)*(ratio-1)/(ratio+1))
+	tau = (hoek.s_1-hoek.s_3)*(np.sqrt(ratio)/(ratio+1))
 
 	
 
@@ -79,7 +88,15 @@ def hoek(s_ci,mb,s,a,Ei,case,H,gamma,s3):
 		s_3max = s3
 	return s_t,s_u,s_cm,s_3max
 
-
+def hoek_plot():
+	hoek_plot.fig_hoek, hoek_plot.ax_hoek = plt.subplots(1,num='H-B criterion');
+	hoek_plot.ax_hoek.clear();
+	hoek_plot.ax_hoek.plot(np.real(hoek.s_3),np.real(hoek.s_1),'-k');
+	hoek_plot.ax_hoek.grid();
+	hoek_plot.ax_hoek.set_xlabel(r'$\sigma_{3}$[MPa]');
+	hoek_plot.ax_hoek.set_ylabel(r'$\sigma_{1}$[MPa]');
+	hoek_plot.ax_hoek.set_title('Hoek Brown criterion');
+	hoek_plot.fig_hoek.show();
 
 
 

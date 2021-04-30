@@ -80,7 +80,7 @@ def register_value(key,value):
 		MR.configure(state='disabled')
 		
 	main_var(dict_values)
-	
+		
 	hoek_crit()
 	mohr_crit()
 	
@@ -134,10 +134,7 @@ def switch_case(event):
 		s3max.configure(state='normal')
 		gamma.configure(state='disabled')
 		H.configure(state='disabled')
-	
-def plot_hoek():
-	#hoek_crit.fig_hoek.show()
-	print('Plot!')
+
 
 dict_values = {'s_ci': 30, 'mi': 10 , 'GSI': 50, 'D': 0, 'E_i': 12000,'MR': 400,'case': 'general','H':50,'gamma':0.026,'s_3max':7.5}
 dict_ind = dict()
@@ -158,7 +155,7 @@ if __name__ == "__main__":
 	}
 
 	tools_dict = {
-	"Hoek criterion": plot_hoek,
+	"Hoek criterion": r_h.hoek_plot,
 	"Mohr criterion": mohr_crit,
 	"Mohr circle": tool_mohr,
 	}
@@ -336,7 +333,7 @@ if __name__ == "__main__":
 	mohr_crit()
 	
 	
-		
+	
 	
 	
 	
