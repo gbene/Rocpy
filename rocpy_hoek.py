@@ -46,7 +46,8 @@ import matplotlib.pyplot as plt
 
 
 
-def hoek(s_ci,mb,s,a,Ei,case,H,gamma,s3):
+
+def hoek(s_ci,mb,s,a,case,H,gamma,s3,x_value):
 	
 	
 	
@@ -55,7 +56,7 @@ def hoek(s_ci,mb,s,a,Ei,case,H,gamma,s3):
 	s_u = s_ci*np.power(s,a) #rock mass uniaxial compressive strength
 	s_t = (-s*s_ci)/mb #rock mass tensile strength (s_1 = s_3)
 	s_cm = s_ci*((mb+(4*s)-(a*(mb-(8*s))))*np.power(((mb/4)+s),(a-1)))/(2*(1+a)*(2+a)) #mass strength
-	hoek.s_3 = np.arange(s_t,5,0.01,dtype=np.complex)
+	hoek.s_3 = np.arange(s_t,x_value,x_value/(x_value*1000),dtype=np.complex)
 	hoek.s_1 = hoek.s_3+(s_ci*np.power(((mb*hoek.s_3)/s_ci)+s,a))
 	hoek.s_1[0] = 0
 	
