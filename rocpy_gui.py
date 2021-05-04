@@ -27,6 +27,11 @@ def file_exit():
 		plt.close('all')
 		window.destroy()
 
+
+#------------------ CONSTRUCTORS -----------------------------------
+# used to build entry boxes and text for the GUI
+
+
 def entry_constructor(frame,text_var,row,col):
 	label = tk.Label(frame,text=text_var)
 	entry = tk.Entry(master=tools_frame)
@@ -36,9 +41,19 @@ def entry_constructor(frame,text_var,row,col):
 	entry.insert(0,dict_values[text_var])
 	return label,entry
 
-def tool_mohr():
-	print("Morh Circle!")
+def output_constructor(frame,text_var,row,col):
+	label = tk.Label(frame,text = f'{text_var}:')
+	label.grid(row=row,column=col)
+	entry = tk.Label(frame,text=str(round(dict_ind[text_var],3)))
+	entry.grid(row=row,column=col+1)
+	return label,entry
+	
 
+
+#--------------------- MAIN FUNCTIONS --------------------------------------
+
+
+# Calculate the H-B indices 
 
 def main_var(dict_values):
 	
@@ -49,29 +64,43 @@ def main_var(dict_values):
 	dict_ind['a'] = 0.5+((1/6)*(np.exp(-GSI/15)-np.exp(-20/3)))
 	dict_ind['E_i'] = dict_values['E_i']
 	
+	hoek_crit()
+	mohr_crit()
+	dict_ind['s_1max'] = r_m.mohr_circle(dict_ind['c'],dict_ind['phi'],dict_values['s_3max'])
 	
 	#return dict_ind.values()
 	
 
+# Calculate the H-B rock mass parameters
 def hoek_crit():
-	s_t,s_u,s_cm,_ = r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_values['case'],dict_values['H'],dict_values['gamma'],dict_values['s_3max'],dict_values['x_value'])
+	dict_ind['s_t'],dict_ind['s_u'],dict_ind['s_cm'],_ = r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],
+							     dict_ind['a'],dict_values['case'],dict_values['H'],dict_values['gamma'],
+							     dict_values['s_3max'],dict_values['x_value'])
 	
-	E_rm = dict_ind['E_i']*(0.02+((1-(dict_values['D']/2))/(1+np.exp((60+(15*dict_values['D'])-dict_values['GSI'])/11))))
+	dict_ind['E_rm'] = dict_ind['E_i']*(0.02+((1-(dict_values['D']/2))/(1+np.exp((60+(15*dict_values['D'])-dict_values['GSI'])/11))))
 	
-	s_t_val['text'] = str(round(s_t,3))
-	s_c_val['text'] = str(round(s_u,3))
-	s_cm_val['text'] = str(round(s_cm,3))
-	e_rm_val['text'] = str(round(E_rm,3))
+
 	#print(s_t,s_u,s_cm,E_rm,s_3max)
 
+
+# Calculate the M-C equivalent rock mass parameters
 def mohr_crit():
-	_,_,_,dict_values['s_3max']= r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_values['case'],dict_values['H'],dict_values['gamma'],dict_values['s_3max'],dict_values['x_value'])
-	phi,c = r_m.mohr(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_values['s_3max'],dict_values['x_value'])
-	c_val['text'] = str(round(c,3))
-	phi_val['text'] = str(round(np.rad2deg(phi),3))
+	_,_,_,dict_values['s_3max'] = r_h.hoek(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],
+				      dict_ind['a'],dict_values['case'],dict_values['H'],dict_values['gamma'],
+				      dict_values['s_3max'],dict_values['x_value'])
+	
+	dict_ind['phi'],dict_ind['c'] = r_m.mohr(dict_values['s_ci'],dict_ind['mb'],dict_ind['s'],dict_ind['a'],dict_values['s_3max'],dict_values['x_value'])
+	
+
 	
 	#print(np.rad2deg(phi), c)
+	
 
+# Rock mass Mohr circle display plot function
+def mohr_circle_plot():
+	 r_m.mohr_circle_plot()
+
+# Register the input value written in one of the boxes (called every key release)
 def register_value(key,value):
 	dict_values[key]=float(value.get())
 	
@@ -91,9 +120,8 @@ def register_value(key,value):
 		MR.configure(state='disabled')
 		
 	main_var(dict_values)
-		
-	hoek_crit()
-	mohr_crit()
+
+
 	
 	if dict_values['case'] != 'custom':
 		s_3max.configure(state='normal')
@@ -101,12 +129,23 @@ def register_value(key,value):
 		s_3max.insert(0,round(dict_values['s_3max'],3))
 		s_3max.configure(state='disabled')
 		
+	# update output text values
 	mb['text'] = str(round(dict_ind['mb'],3))
 	s['text'] = str(round(dict_ind['s'],3))
 	a['text'] = str(round(dict_ind['a'],3))
-
+	s_t_val['text'] = str(round(dict_ind['s_t'],3))
+	s_c_val['text'] = str(round(dict_ind['s_u'],3))
+	s_cm_val['text'] = str(round(dict_ind['s_cm'],3))
+	e_rm_val['text'] = str(round(dict_ind['E_rm'],3))
+	c_val['text'] = str(round(dict_ind['c'],3))
+	phi_val['text'] = str(round(np.rad2deg(dict_ind['phi']),3))
+	s_1_val['text'] = str(round(dict_ind['s_1max'],3))
 	
+	if plt.fignum_exists('Failure Mohr circle'):
+		r_m.mohr_circle_plot()
 
+
+# Switch between E_i and MR
 def toggle_ei():
 	MR["state"] = "disabled"
 	MR_button.toggle()
@@ -121,7 +160,8 @@ def toggle_mr():
 	if not mr_var.get():
 		E_i["state"] = "normal"
 		MR["state"] = "disabled"
-	
+
+# Modify GUI depending on the different types of application
 def switch_case(event):
 	dict_values['case'] = case_box.get()
 	
@@ -147,13 +187,12 @@ def switch_case(event):
 		gamma.configure(state='disabled')
 		H.configure(state='disabled')
 
-
+# Standard values
 dict_values = {'s_ci': 30, 'mi': 10 , 'GSI': 50, 'D': 0, 'E_i': 12000,'MR': 400,'case': 'general','H':50,'gamma':0.026,'s_3max':7.5,'x_value': 5}
 dict_ind = dict()
 
 
 main_var(dict_values)
-
 
 
 
@@ -169,7 +208,7 @@ if __name__ == "__main__":
 	tools_dict = {
 	"Hoek criterion": r_h.hoek_plot,
 	"Mohr criterion": r_m.mohr_plot,
-	"Mohr circle": tool_mohr,
+	"Mohr circle": mohr_circle_plot,
 	}
 
 	menu = [["File",file_dict],["Plots",tools_dict]]
@@ -189,7 +228,9 @@ if __name__ == "__main__":
 	window.config(menu=menubar)
 
 
-	# define a main frame to which a secondary frame (tool frame) is attached. On the tool frame all of the tools can be attached
+	
+	
+#--------------------- INPUT -------------------------------------
 
 	main_frame = tk.Frame(master=window)
 	main_frame.pack(fill=tk.BOTH,expand=True)
@@ -220,7 +261,7 @@ if __name__ == "__main__":
 	MR_label,MR = entry_constructor(tools_frame,'MR',6,0)
 	MR_button = tk.Checkbutton(tools_frame,var=mr_var,command=toggle_mr)
 	MR_button.toggle()
-	MR_button.grid(row=6,column=2)	
+	MR_button.grid(row=6,column=2)
 	
 	failure_label = tk.Label(tools_frame,text = 'Failure envelope')
 	failure_label.grid(row=7,column=1)
@@ -244,62 +285,36 @@ if __name__ == "__main__":
 	
 	x_label,x_value = entry_constructor(tools_frame,'x_value',12,0)
 	
+#--------------------- OUTPUT -------------------------------------
+
+	
 	hb_label = tk.Label(tools_frame,text = 'H-B criterion')
 	hb_label.grid(row=0,column=4)
 	
-	mb_label = tk.Label(tools_frame,text = 'mb:')
-	mb_label.grid(row=1,column=3)
-	mb = tk.Label(tools_frame,text=str(round(dict_ind['mb'],3)))
-	mb.grid(row=1,column=4)
+	mb_label,mb = output_constructor(tools_frame,'mb',1,3)
 
-	
-	s_label = tk.Label(tools_frame,text = 's:')
-	s_label.grid(row=2,column=3)
-	s = tk.Label(tools_frame,text=str(round(dict_ind['s'],3)))
-	s.grid(row=2,column=4)
+	s_label,s = output_constructor(tools_frame,'s',2,3)
 
+	a_label,a = output_constructor(tools_frame,'a',3,3)
 	
-	a_label = tk.Label(tools_frame,text = 'a:')
-	a_label.grid(row=3,column=3)
-	a = tk.Label(tools_frame,text=str(round(dict_ind['a'],3)))
-	a.grid(row=3,column=4)
 	
 	mc_label = tk.Label(tools_frame,text = 'M-C fit')
 	mc_label.grid(row=4,column=4)
 	
-	c_label = tk.Label(tools_frame,text = 'c:')
-	c_label.grid(row=5,column=3)
-	c_val = tk.Label(tools_frame)
-	c_val.grid(row=5,column=4)
-	phi_label = tk.Label(tools_frame,text = 'phi:')
-	phi_label.grid(row=6,column=3)
-	phi_val = tk.Label(tools_frame)
-	phi_val.grid(row=6,column=4)
+	c_label,c_val = output_constructor(tools_frame,'c',5,3)
+	phi_label,phi_val = output_constructor(tools_frame,'phi',6,3)
 	
 	rmp_label = tk.Label(tools_frame,text = 'Rock mass paramaters')
 	rmp_label.grid(row=7,column=4)
 	
-	s_t_label = tk.Label(tools_frame,text = 's_t:')
-	s_t_label.grid(row=8,column=3)
-	s_t_val = tk.Label(tools_frame)
-	s_t_val.grid(row=8,column=4)
-	s_c_label = tk.Label(tools_frame,text = 's_c:')
-	s_c_label.grid(row=9,column=3)
-	s_c_val = tk.Label(tools_frame)
-	s_c_val.grid(row=9,column=4)
-	s_cm_label = tk.Label(tools_frame,text = 's_cm:')
-	s_cm_label.grid(row=10,column=3)
-	s_cm_val = tk.Label(tools_frame)
-	s_cm_val.grid(row=10,column=4)
-	e_rm_label = tk.Label(tools_frame,text = 'E_rm:')
-	e_rm_label.grid(row=11,column=3)
-	e_rm_val = tk.Label(tools_frame)
-	e_rm_val.grid(row=11,column=4)
-	
- 
-	
+	s_t_label,s_t_val = output_constructor(tools_frame,'s_t',8,3)
+	s_c_label,s_c_val = output_constructor(tools_frame,'s_u',9,3)
+	s_cm_label,s_cm_val = output_constructor(tools_frame,'s_cm',10,3)
+	e_rm_label,e_rm_val = output_constructor(tools_frame,'E_rm',11,3)
+	s_1_label,s_1_val = output_constructor(tools_frame,'s_1max',12,3)
 	hoek_crit()
 	mohr_crit()
+
 	
 	
 	

@@ -13,7 +13,8 @@ The available functions are:
 + Calculate Rock mass parameters (σ_t, σ_c, σ_cm, E_rm)
 + Calculate σ_3max based on different applications (e.g tunnels)
 + Calculate Mohr-Coulomb parameters (c and φ)
-
++ Plot H-B and M-C envelope.
++ Failure mohr circle plot and σ_1max value.
 
 ## Dipendencies:
 
@@ -26,10 +27,8 @@ pip install numpy
 
 ## Todo list
 
-+ GUI
-+ Plot function
+
 + Tabulated values for input parameters (e.g. **D** or **mi**)
-+ Failure mohr circle plot and σ_1max value.
 + More to come (maybe)!
 
 
