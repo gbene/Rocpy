@@ -38,6 +38,6 @@ pip install numpy
 
 
 + Tabulated values for input parameters (e.g. **D** or **mi**)
-+ More to come (maybe)!
++ Import and export data
 
 
